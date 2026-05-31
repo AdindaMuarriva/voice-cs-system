@@ -1,0 +1,83 @@
+# ── Environment & Secrets ─────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.spec
+
+# ── Virtual Environment ───────────────────────────────────────
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Model Files (terlalu besar untuk GitHub) ──────────────────
+# Whisper models
+models/whisper.cpp/
+models/whisper.cpp/models/*.bin
+models/whisper.cpp/models/*.gguf
+models/whisper.cpp/models/*.mlmodel
+# Whisper build artifacts
+models/whisper.cpp/build/
+models/whisper.cpp/CMakeFiles/
+models/whisper.cpp/CMakeCache.txt
+
+# Coqui TTS model weights
+app/coqui_tts/*.pth
+app/coqui_tts/*.pt
+app/coqui_tts/*.onnx
+
+# ── Audio & Data ──────────────────────────────────────────────
+# Korpus audio 
+data/corpus/audio/*.wav
+data/corpus/audio/*.mp3
+data/corpus/audio/*.m4a
+data/corpus/audio/*.flac
+
+# File audio sementara
+temp/
+*.tmp
+
+# ── Log & Output ──────────────────────────────────────────────
+log/analisis/
+log/tts_output/
+log/*.json
+log/*.csv
+log/*.txt
+
+# ── OS & Editor ───────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Jupyter ───────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Testing ───────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/

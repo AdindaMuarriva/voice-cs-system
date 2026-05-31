@@ -1,0 +1,17 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
+google-genai>=0.8.0
+coqui-tts
+transformers==5.0.0
+torch
+torchaudio
+langdetect==1.0.9
+jiwer==3.0.4
+requests==2.31.0
+gradio==4.36.1
+pydantic==2.7.1
+aiofiles==23.2.1
+numpy
+soundfile
