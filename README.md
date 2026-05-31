@@ -61,25 +61,25 @@ voice-cs-system/
 │   ├── llm.py                # LLM (Gemini API + rotasi multi-key)
 │   ├── tts.py                # Text-to-Speech (Coqui / gTTS fallback)
 │   ├── utils.py              # Normalisasi & language tagging
-│   └── coqui_tts/            # Model TTS lokal (diisi manual, tidak di-commit)
+│   └── coqui_tts/            # Model TTS lokal 
 │       ├── config.json
 │       ├── checkpoint_*.pth
 │       └── speakers.pth
 │
 ├── data/
 │   ├── corpus/
-│   │   ├── audio/            # File rekaman .wav (tidak di-commit)
+│   │   ├── audio/            # File rekaman .wav 
 │   │   └── transcripts/      # Hasil transkripsi .json
 │   └── manifests/
 │
 ├── models/
-│   └── whisper.cpp/          # Build whisper.cpp di sini (tidak di-commit)
+│   └── whisper.cpp/          # Build whisper.cpp di sini 
 │
-├── log/                      # Log hasil pipeline (tidak di-commit)
+├── log/                      # Log hasil pipeline 
 │   ├── analisis/             # Hasil JSON per file
 │   └── tts_output/           # Audio TTS output
 │
-├── temp/                     # File audio sementara (otomatis dihapus)
+├── temp/                     # File audio sementara 
 │
 ├── gradio_app/
 │   ├── __init__.py
