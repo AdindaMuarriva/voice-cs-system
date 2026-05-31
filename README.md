@@ -1,27 +1,49 @@
-# 🎙️ Code-Switching Speech-to-Speech System
-**UAS Praktikum NLP 2025/2026 Genap | Program Studi Informatika, Universitas Syiah Kuala**
+# 🎙️ Voice CS System — Code-Switching Speech-to-Speech
 
-Sistem multilingual Speech-to-Speech end-to-end yang mendukung ujaran code-switching Bahasa **Indonesia – Inggris – Arab**.
+> **UAS Praktikum Natural Language Processing 2025/2026 Genap**  
+> Program Studi Informatika, Universitas Syiah Kuala
+
+Sistem multilingual **Speech-to-Speech end-to-end** yang menerima ujaran *code-switching* Bahasa **Indonesia–Inggris–Arab**, memprosesnya melalui pipeline STT → LLM → TTS, dan menghasilkan respons suara kembali.
 
 ---
 
-## 📐 Arsitektur Pipeline
+## 📌 Deskripsi Singkat
+
+Sistem ini dibangun secara individu sebagai proyek akhir praktikum NLP. Fokus utama adalah penyusunan korpus speech *code-switching* ID–EN–AR yang terkontrol, serta implementasi pipeline percakapan berbasis suara yang mendukung tiga mode operasi:
+
+| Mode | Deskripsi |
+|------|-----------|
+| `preserve` | Pertahankan pola *code-switching* dalam respons |
+| `normalize` | Normalisasi respons ke Bahasa Indonesia baku |
+| `translate` | Terjemahkan seluruh konten ke Bahasa Indonesia  |
+
+---
+
+## 🏗️ Arsitektur Pipeline
 
 ```
 Audio Input (.wav)
       │
       ▼
-[STT] Whisper / whisper.cpp
-      │  Transkripsi teks (ID/EN/AR)
+┌─────────────┐
+│  STT        │  OpenAI Whisper (base) — transkripsi multilingual
+└─────┬───────┘
+      │
       ▼
-[Processing] Normalisasi + Language Tagging
-      │  Deteksi bahasa, normalisasi teks
+┌─────────────┐
+│  Processing │  Normalisasi teks + language tagging per token
+└─────┬───────┘
+      │
       ▼
-[LLM] Google Gemini API
-      │  Generate respons (mode: preserve/normalize/translate)
+┌─────────────┐
+│  LLM        │  Google Gemini 2.5 Flash Lite — generate respons
+└─────┬───────┘
+      │
       ▼
-[TTS] Coqui TTS (model Indonesia)
-      │  Sintesis suara
+┌─────────────┐
+│  TTS        │  Coqui TTS / gTTS — sintesis suara output
+└─────┬───────┘
+      │
       ▼
 Audio Output (.wav)
 ```
@@ -33,24 +55,39 @@ Audio Output (.wav)
 ```
 voice-cs-system/
 ├── app/
-│   ├── main.py              ← FastAPI backend
-│   ├── stt.py               ← Speech-to-Text (Whisper)
-│   ├── llm.py               ← LLM (Gemini API)
-│   ├── tts.py               ← Text-to-Speech (Coqui)
-│   ├── utils.py             ← Normalisasi & language tagging
-│   └── coqui_tts/           ← Model TTS (diisi manual)
+│   ├── __init__.py
+│   ├── main.py               # FastAPI backend (endpoint utama)
+│   ├── stt.py                # Speech-to-Text (Whisper)
+│   ├── llm.py                # LLM (Gemini API + rotasi multi-key)
+│   ├── tts.py                # Text-to-Speech (Coqui / gTTS fallback)
+│   ├── utils.py              # Normalisasi & language tagging
+│   └── coqui_tts/            # Model TTS lokal (diisi manual, tidak di-commit)
+│       ├── config.json
+│       ├── checkpoint_*.pth
+│       └── speakers.pth
+│
 ├── data/
 │   ├── corpus/
-│   │   ├── audio/           ← File rekaman .wav
-│   │   └── transcripts/     ← Hasil transkripsi .json
+│   │   ├── audio/            # File rekaman .wav (tidak di-commit)
+│   │   └── transcripts/      # Hasil transkripsi .json
 │   └── manifests/
+│
 ├── models/
-│   └── whisper.cpp/         ← Diisi setelah clone
-├── log/                     ← Log hasil pipeline
+│   └── whisper.cpp/          # Build whisper.cpp di sini (tidak di-commit)
+│
+├── log/                      # Log hasil pipeline (tidak di-commit)
+│   ├── analisis/             # Hasil JSON per file
+│   └── tts_output/           # Audio TTS output
+│
+├── temp/                     # File audio sementara (otomatis dihapus)
+│
 ├── gradio_app/
-│   └── app.py               ← UI demo Gradio
-├── analisis_pipeline.py     ← Script batch analisis corpus
-├── .env.example             ← Template konfigurasi
+│   ├── __init__.py
+│   └── app.py                # UI demo Gradio
+│
+├── analisis_pipeline.py      # Script batch analisis seluruh korpus
+├── resume_pipeline.py        # Resume pipeline dari checkpoint
+├── .env.example              # Template konfigurasi (salin ke .env)
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -60,103 +97,141 @@ voice-cs-system/
 
 ## ⚙️ Setup & Instalasi
 
-### 1. Clone & Virtual Environment
+### Prasyarat
+- Python 3.11+
+- Git
+
+### 1. Clone Repository
+
 ```bash
-git clone <repo-url>
+git clone https://github.com/AdindaMuarriva/voice-cs-system.git
 cd voice-cs-system
+```
+
+### 2. Virtual Environment
+
+```bash
+# Linux / macOS
 python3 -m venv env
-source env/bin/activate        # Linux/macOS
-# env\Scripts\activate         # Windows
+source env/bin/activate
+
+# Windows
+python -m venv env
+env\Scripts\activate
+```
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
 pip install -U google-genai
-pip install transformers==5.0.0   # Fix Coqui TTS compatibility
+pip install transformers==5.0.0   # Fix kompatibilitas Coqui TTS
 ```
 
-### 2. Konfigurasi `.env`
+### 4. Konfigurasi `.env`
+
 ```bash
 cp .env.example .env
-# Edit .env dan isi GEMINI_API_KEY
 ```
 
-### 3. Install & Build whisper.cpp
+
+### 5. Setup Whisper (Opsional — untuk performa lebih baik)
+
 ```bash
 git clone https://github.com/ggml-org/whisper.cpp.git models/whisper.cpp
 cd models/whisper.cpp
 cmake -B build
 cmake --build build --config Release
-./models/download-ggml-model.sh large-v3-turbo   # atau model lebih kecil
+./models/download-ggml-model.sh large-v3-turbo
 cd ../..
 ```
 
-### 4. Download model Coqui TTS Indonesia
-Simpan model ke `app/coqui_tts/`:
-- `config.json`
-- `checkpoint_100000.pth`
-- `speakers.pth` (jika multi-speaker)
+Jika whisper.cpp tidak tersedia, sistem otomatis fallback ke `openai-whisper` Python:
 
-Referensi: [wikipedia/indonesian-tts](https://github.com/wikipedia/indonesian-tts)
+```bash
+pip install openai-whisper
+```
 
 ---
 
-## 🚀 Menjalankan Sistem
+##  Menjalankan Sistem
 
 ### Backend FastAPI
+
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-Dokumentasi API: http://localhost:8000/docs
 
-### UI Gradio (Opsional)
+Dokumentasi API otomatis tersedia di: **http://localhost:8000/docs**
+
+### UI Demo Gradio
+
+Buka terminal baru (backend harus tetap berjalan):
+
 ```bash
 python gradio_app/app.py
 ```
-Akses di: http://localhost:7860
+
+Akses di: **http://localhost:7860**
 
 ---
 
-## 📊 Analisis Korpus
+## Analisis Korpus (Batch Pipeline)
 
 Letakkan file audio di `data/corpus/audio/`, lalu jalankan:
+
 ```bash
-# Analisis semua file
-python analisis_pipeline.py
+# Proses semua file (dengan skip otomatis untuk yang sudah selesai)
+python analisis_pipeline.py --mode preserve --limit 460 --sleep 5
 
-# Mode normalize, batasi 5 file
-python analisis_pipeline.py --mode normalize --limit 5
-
-# Dengan bahasa hint
-python analisis_pipeline.py --lang id --sleep 3.0
+# Resume dari file yang gagal sebelumnya
+python resume_pipeline.py --limit 460 --sleep 5 --retry-llm-only
 ```
-Laporan tersimpan di `log/`.
+
+Parameter tersedia:
+
+| Parameter | Default | Keterangan |
+|-----------|---------|------------|
+| `--mode` | `preserve` | Mode pipeline: `preserve`, `normalize`, `translate` |
+| `--limit` | semua | Batasi jumlah file yang diproses |
+| `--sleep` | `2.0` | Jeda antar request LLM (detik) — naikkan jika kena rate limit |
+| `--lang` | `auto` | Hint bahasa STT: `auto`, `id`, `en`, `ar` |
+| `--retry-llm-only` | — | Hanya retry file yang STT-nya sudah ada tapi LLM gagal |
+
+Laporan otomatis tersimpan di `log/` dalam format **JSON**, **CSV**, dan **TXT**.
 
 ---
 
-## 📂 Format Penamaan File Audio Korpus
-```
-{id}_{utteranceid}.wav
-Contoh: 2030_audio01.wav
-```
-`id` = 2 digit awal + 2 digit akhir NPM.
-
----
-
-## 🔑 Endpoint API
+## Endpoint API
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| POST | `/voice-chat` | Pipeline penuh: audio → audio |
-| POST | `/text-chat` | Teks → respons LLM |
-| POST | `/transcribe` | Audio → transkripsi saja |
-| POST | `/reset-conversation` | Reset history |
-| GET  | `/health` | Status sistem |
+| `POST` | `/voice-chat` | Pipeline penuh: audio input → audio output |
+| `POST` | `/transcribe` | STT saja: audio → teks + tagging |
+| `POST` | `/text-chat` | LLM saja: teks → respons |
+| `POST` | `/reset-conversation` | Reset history percakapan |
+| `GET`  | `/health` | Status sistem |
+
+Contoh request menggunakan `curl`:
+
+```bash
+curl -X POST http://localhost:8000/voice-chat \
+  -F "audio=@data/corpus/audio/2222_audio01.wav" \
+  -F "mode=preserve" \
+  -F "stt_language=auto" \
+  --output response.wav
+```
 
 ---
 
-## 📏 Metrik Evaluasi
+## Referensi
 
-| Komponen | Metrik |
-|----------|--------|
-| STT | WER (Word Error Rate), CER (Character Error Rate) |
-| LLM | Correctness (penilaian manual) |
-| TTS | Naturalness (penilaian subjektif) |
-| End-to-end | Latency (s), Intelligibility |
+- [OpenAI Whisper](https://github.com/openai/whisper)
+- [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
+- [Google Gemini API](https://ai.google.dev/gemini-api/docs)
+- [Coqui TTS (fork aktif)](https://github.com/idiap/coqui-ai-TTS)
+- [Indonesian TTS Model](https://github.com/wikipedia/indonesian-tts)
+- [FastAPI](https://fastapi.tiangolo.com)
+- [Gradio](https://www.gradio.app/docs)
+
+---
